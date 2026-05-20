@@ -1,7 +1,8 @@
+
 # =============================================================================
 # TRABAJO PRÁCTICO 1 - LABORATORIO DE DATOS - Tobías Escobar & Alejo Gutierrez 
 # Instituto de Cálculo - Comisión 2
-# Fecha límite: artes 26/5/2026 - 22:00 h
+# Fecha límite: martes 26/5/2026 - 22:00 h
 # =============================================================================
 #
 # IMPORTANTE: leer todo el enunciado antes de empezar a resolverlo.
@@ -17,158 +18,172 @@
 # base_aprender_secu_2024.csv
 # -----------------------------------------------------------------------------
 # Información relevada por Aprender 2024 a nivel sujeto:
-#   1-jurisdiccion       : provincia a la que pertenece la escuela
-#   2-sector             : sector de la escuela (privado / estatal)
-#   3-ambito             : ámbito de la escuela (rural / urbano)
-#   4-ID_colegio         : ID anónimo de la escuela
-#   5-ID_seccion         : ID anónimo del curso (grado)
-#   6-ID_alumno          : ID anónimo del alumno
-#   7-lpuntaje           : puntaje en la prueba de lengua
-#   8-mpuntaje           : puntaje en la prueba de matemática
-#   9-ldesemp            : desempeño categorizado en lengua
-#   10-mdesemp            : desempeño categorizado en matemática
-#   11-Nivel_Ed_MadreX    : nivel educativo de la madre
+#   jurisdiccion       : provincia a la que pertenece la escuela
+#   sector             : sector de la escuela (privado / estatal)
+#   ambito             : ámbito de la escuela (rural / urbano)
+#   ID_colegio         : ID anónimo de la escuela
+#   ID_seccion         : ID anónimo del curso (grado)
+#   ID_alumno          : ID anónimo del alumno
+#   lpuntaje           : puntaje en la prueba de lengua
+#   mpuntaje           : puntaje en la prueba de matemática
+#   ldesemp            : desempeño categorizado en lengua
+#   mdesemp            : desempeño categorizado en matemática
+#   Nivel_Ed_MadreX    : nivel educativo de la madre
 #
 # -----------------------------------------------------------------------------
 # presupuesto_educacion_2024.csv
 # -----------------------------------------------------------------------------
 # Información a nivel provincia/año sobre gasto educativo:
-#   1-Año                              : año del dato
-#   2-jurisdiccion                     : provincia
-#   3-Total                            : gasto total ($)
-#   4-Personal                         : gasto en personal ($)
-#   5-Bienes_y_servicios_no_personales : gasto en bienes y servicios ($)
-#   6-Gasto_x_alumno_estatal           : gasto total por alumno (sector estatal)
+#   Año                              : año del dato
+#   jurisdiccion                     : provincia
+#   Total                            : gasto total ($)
+#   Personal                         : gasto en personal ($)
+#   Bienes_y_servicios_no_personales : gasto en bienes y servicios ($)
+#   Gasto_x_alumno_estatal           : gasto total por alumno (sector estatal)
 #
 # =============================================================================
 #===========================LIBRERIAS A USAR===================================
-install.packages("dplyr")
-install.packages("ggplot2")
+
+#install.packages("tidyverse")
+#install.packages("dplyr")
+#install.packages("ggplot2")
 
 library(ggplot2)
 library(dplyr)
+library(tidyverse)
 
 # =============================================================================
 # DATASETS
 # =============================================================================
 
-base <- read.csv("/home/skuvi/Documentos/Facultad/Lab de Datos Calculo/TP1/base_aprender_secu_2024.csv")
+base <- read.csv("base_aprender_secu_2024.csv")
 
-presupuesto <- read.csv("/home/skuvi/Documentos/Facultad/Lab de Datos Calculo/TP1/presupuesto_educacion_2024.csv")
-
-# =============================================================================
-# VARIABLES NUMERICAS
-# ---------------------------
-# MEDIA
-# ---------------------------
-
-probase <- mean(base[,7], na.rm = TRUE)
-
-# Calcula el promedio de lpuntaje
-# na.rm = TRUE elimina valores NA
-
-propre <- mean(presupuesto[,3], na.rm = TRUE)
-
-# ---------------------------
-# MEDIANA
-# ---------------------------
-
-medianaBase <- median(base[,7], na.rm = TRUE)
-
-medianaPre <- median(presupuesto[,3], na.rm = TRUE)
-
-# ---------------------------
-# DESVIO ESTANDAR
-# ---------------------------
-
-# NO existe ds()
-# La funcion correcta es sd()
-
-dsBase <- sd(base[,7], na.rm = TRUE)
-
-dsPre <- sd(presupuesto[,3], na.rm = TRUE)
-
-# ---------------------------
-# MINIMO
-# ---------------------------
-
-minBase <- min(base[,7], na.rm = TRUE)
-
-minPre <- min(presupuesto[,3], na.rm = TRUE)
-
-# ---------------------------
-# MAXIMO
-# ---------------------------
-
-maxBase <- max(base[,7], na.rm = TRUE)
-
-maxPre <- max(presupuesto[,3], na.rm = TRUE)
+presupuesto <- read.csv("presupuesto_educacion_2024.csv")
 
 # =============================================================================
-# MOSTRAR RESULTADOS
-# =============================================================================
-sprintf("El promedio de base es %.2f" ,probase)
-sprintf("El promedio de presupuesto es %.2f",propre)
-
-sprintf("La mediana de Base es %2.f",medianaBase)
-sprintf("La mediana de Presupuesto es %2.f",medianaPre)
-
-sprintf("El desvio estandar de Base es %2.f",dsBase)
-sprintf("El desvio estandar de Presupuesto es %2.f",dsPre)
-sprintf("El mininmo de base es %2.f",minBase)
-sprintf("El minimo del Presupuesto es %2.f",minPre)
-sprintf("El maáximo de Base es %2.f",maxBase)
-sprintf("El maximo del Presupuesto es %2.f",maxPre)
-
-# =============================================================================
-# VARIABLES CATEGORICAS
-# =============================================================================
-#
-# Vamos a usar:
-#   table()        -> frecuencia absoluta
-#   prop.table()   -> frecuencia relativa
-#
+# 1.A) VARIABLES NUMÉRICAS (Estadísticos Resumen)
 # =============================================================================
 
-# ---------------------------
-# SECTOR
-# ---------------------------
+# --- Base Aprender: Lengua ---
+resumen_lpuntaje <- base %>%
+  summarise(
+    Variable = "lpuntaje (Lengua)",
+    Media   = mean(lpuntaje, na.rm = TRUE),
+    Mediana = median(lpuntaje, na.rm = TRUE),
+    Desvio  = sd(lpuntaje, na.rm = TRUE),
+    Minimo  = min(lpuntaje, na.rm = TRUE),
+    Maximo  = max(lpuntaje, na.rm = TRUE)
+  )
+print(resumen_lpuntaje)
 
-freqSector <- table(base$sector)
+# --- Base Aprender: Matemática ---
+resumen_mpuntaje <- base %>%
+  summarise(
+    Variable = "mpuntaje (Matemática)",
+    Media   = mean(mpuntaje, na.rm = TRUE),
+    Mediana = median(mpuntaje, na.rm = TRUE),
+    Desvio  = sd(mpuntaje, na.rm = TRUE),
+    Minimo  = min(mpuntaje, na.rm = TRUE),
+    Maximo  = max(mpuntaje, na.rm = TRUE)
+  )
+print(resumen_mpuntaje)
 
-# Cuenta cuantos hay de cada categoria
+# --- Base Presupuesto: Gasto Total ---
+resumen_gasto_total <- presupuesto %>%
+  summarise(
+    Variable = "Gasto Total",
+    Media   = mean(Total, na.rm = TRUE),
+    Mediana = median(Total, na.rm = TRUE),
+    Desvio  = sd(Total, na.rm = TRUE),
+    Minimo  = min(Total, na.rm = TRUE),
+    Maximo  = max(Total, na.rm = TRUE)
+  )
+print(resumen_gasto_total)
 
-print(freqSector)
+# --- Base Presupuesto: Gasto en Personal ---
+resumen_gasto_personal <- presupuesto %>%
+  summarise(
+    Variable = "Gasto en Personal",
+    Media   = mean(Personal, na.rm = TRUE),
+    Mediana = median(Personal, na.rm = TRUE),
+    Desvio  = sd(Personal, na.rm = TRUE),
+    Minimo  = min(Personal, na.rm = TRUE),
+    Maximo  = max(Personal, na.rm = TRUE)
+  )
+print(resumen_gasto_personal)
 
-freqRelSector <- prop.table(freqSector)
+# --- Base Presupuesto: Bienes y Servicios No Personales ---
+resumen_gasto_bienes <- presupuesto %>%
+  summarise(
+    Variable = "Bienes y Servicios No Personales",
+    Media   = mean(Bienes_y_servicios_no_personales, na.rm = TRUE),
+    Mediana = median(Bienes_y_servicios_no_personales, na.rm = TRUE),
+    Desvio  = sd(Bienes_y_servicios_no_personales, na.rm = TRUE),
+    Minimo  = min(Bienes_y_servicios_no_personales, na.rm = TRUE),
+    Maximo  = max(Bienes_y_servicios_no_personales, na.rm = TRUE)
+  )
+print(resumen_gasto_bienes)
 
-# Convierte las frecuencias a porcentajes/proporciones
+# --- Base Presupuesto: Gasto por Alumno Estatal ---
+resumen_gasto_alumno <- presupuesto %>%
+  summarise(
+    Variable = "Gasto por Alumno Estatal",
+    Media   = mean(Gasto_x_alumno_estatal, na.rm = TRUE),
+    Mediana = median(Gasto_x_alumno_estatal, na.rm = TRUE),
+    Desvio  = sd(Gasto_x_alumno_estatal, na.rm = TRUE),
+    Minimo  = min(Gasto_x_alumno_estatal, na.rm = TRUE),
+    Maximo  = max(Gasto_x_alumno_estatal, na.rm = TRUE)
+  )
+print(resumen_gasto_alumno)
 
-print(freqRelSector)
 
-# ---------------------------
-# AMBITO
-# ---------------------------
+# =============================================================================
+# 1.B) VARIABLES CATEGÓRICAS (Frecuencias Absolutas y Relativas)
+# =============================================================================
 
-freqAmbito <- table(base$ambito)
+# --- Variable: Sector ---
+tabla_sector <- base %>%
+  count(sector, name = "Frec_Absoluta") %>%
+  mutate(Frec_Relativa_Porc = (Frec_Absoluta / sum(Frec_Absoluta)) * 100)
+print("Tabla de Frecuencias: Sector")
+print(tabla_sector)
 
-print(freqAmbito)
+# --- Variable: Ámbito ---
+tabla_ambito <- base %>%
+  count(ambito, name = "Frec_Absoluta") %>%
+  mutate(Frec_Relativa_Porc = (Frec_Absoluta / sum(Frec_Absoluta)) * 100)
+print("Tabla de Frecuencias: Ámbito")
+print(tabla_ambito)
 
-freqRelAmbito <- prop.table(freqAmbito)
+# --- Variable: Jurisdicción ---
+tabla_jurisdiccion <- base %>%
+  count(jurisdiccion, name = "Frec_Absoluta") %>%
+  mutate(Frec_Relativa_Porc = (Frec_Absoluta / sum(Frec_Absoluta)) * 100)
+print("Tabla de Frecuencias: Jurisdicción")
+print(tabla_jurisdiccion)
 
-print(freqRelAmbito)
+# --- Variable: Desempeño Lengua ---
+tabla_ldesemp <- base %>%
+  count(ldesemp, name = "Frec_Absoluta") %>%
+  mutate(Frec_Relativa_Porc = (Frec_Absoluta / sum(Frec_Absoluta)) * 100)
+print("Tabla de Frecuencias: Desempeño Lengua")
+print(tabla_ldesemp)
 
-# ---------------------------
-# JURISDICCION
-# ---------------------------
+# --- Variable: Desempeño Matemática ---
+tabla_mdesemp <- base %>%
+  count(mdesemp, name = "Frec_Absoluta") %>%
+  mutate(Frec_Relativa_Porc = (Frec_Absoluta / sum(Frec_Absoluta)) * 100)
+print("Tabla de Frecuencias: Desempeño Matemática")
+print(tabla_mdesemp)
 
-freqJur <- table(base$jurisdiccion)
+# --- Variable: Nivel Educativo de la Madre ---
+tabla_madre <- base %>%
+  count(Nivel_Ed_MadreX, name = "Frec_Absoluta") %>%
+  mutate(Frec_Relativa_Porc = (Frec_Absoluta / sum(Frec_Absoluta)) * 100)
+print("Tabla de Frecuencias: Nivel Educativo Madre")
+print(tabla_madre)
 
-print(freqJur)
 
-freqRelJur <- prop.table(freqJur)
-
-print(freqRelJur)
 # ==============base# =============================================================================
 # CONSIGNA 2 - COBERTURA Y ESTRUCTURA DEL OPERATIVO
 # =============================================================================
