@@ -1,7 +1,7 @@
 # =============================================================================
 # TRABAJO PRÁCTICO 1 - LABORATORIO DE DATOS - Tobías Escobar & Alejo Gutierrez 
 # Instituto de Cálculo - Comisión 2
-# Fecha límite: martes 26/5/2026 - 22:00 h
+# Fecha límite: artes 26/5/2026 - 22:00 h
 # =============================================================================
 #
 # IMPORTANTE: leer todo el enunciado antes de empezar a resolverlo.
@@ -17,38 +17,36 @@
 # base_aprender_secu_2024.csv
 # -----------------------------------------------------------------------------
 # Información relevada por Aprender 2024 a nivel sujeto:
-#   jurisdiccion       : provincia a la que pertenece la escuela
-#   sector             : sector de la escuela (privado / estatal)
-#   ambito             : ámbito de la escuela (rural / urbano)
-#   ID_colegio         : ID anónimo de la escuela
-#   ID_seccion         : ID anónimo del curso (grado)
-#   ID_alumno          : ID anónimo del alumno
-#   lpuntaje           : puntaje en la prueba de lengua
-#   mpuntaje           : puntaje en la prueba de matemática
-#   ldesemp            : desempeño categorizado en lengua
-#   mdesemp            : desempeño categorizado en matemática
-#   Nivel_Ed_MadreX    : nivel educativo de la madre
+#   1-jurisdiccion       : provincia a la que pertenece la escuela
+#   2-sector             : sector de la escuela (privado / estatal)
+#   3-ambito             : ámbito de la escuela (rural / urbano)
+#   4-ID_colegio         : ID anónimo de la escuela
+#   5-ID_seccion         : ID anónimo del curso (grado)
+#   6-ID_alumno          : ID anónimo del alumno
+#   7-lpuntaje           : puntaje en la prueba de lengua
+#   8-mpuntaje           : puntaje en la prueba de matemática
+#   9-ldesemp            : desempeño categorizado en lengua
+#   10-mdesemp            : desempeño categorizado en matemática
+#   11-Nivel_Ed_MadreX    : nivel educativo de la madre
 #
 # -----------------------------------------------------------------------------
 # presupuesto_educacion_2024.csv
 # -----------------------------------------------------------------------------
 # Información a nivel provincia/año sobre gasto educativo:
-#   Año                              : año del dato
-#   jurisdiccion                     : provincia
-#   Total                            : gasto total ($)
-#   Personal                         : gasto en personal ($)
-#   Bienes_y_servicios_no_personales : gasto en bienes y servicios ($)
-#   Gasto_x_alumno_estatal           : gasto total por alumno (sector estatal)
+#   1-Año                              : año del dato
+#   2-jurisdiccion                     : provincia
+#   3-Total                            : gasto total ($)
+#   4-Personal                         : gasto en personal ($)
+#   5-Bienes_y_servicios_no_personales : gasto en bienes y servicios ($)
+#   6-Gasto_x_alumno_estatal           : gasto total por alumno (sector estatal)
 #
 # =============================================================================
 #===========================LIBRERIAS A USAR===================================
-install.packages("tidyverse")
 install.packages("dplyr")
 install.packages("ggplot2")
 
 library(ggplot2)
 library(dplyr)
-library(tidyverse)
 
 # =============================================================================
 # DATASETS
@@ -109,21 +107,18 @@ maxPre <- max(presupuesto[,3], na.rm = TRUE)
 # =============================================================================
 # MOSTRAR RESULTADOS
 # =============================================================================
+sprintf("El promedio de base es %.2f" ,probase)
+sprintf("El promedio de presupuesto es %.2f",propre)
 
-print(probase)
-print(propre)
+sprintf("La mediana de Base es %2.f",medianaBase)
+sprintf("La mediana de Presupuesto es %2.f",medianaPre)
 
-print(medianaBase)
-print(medianaPre)
-
-print(dsBase)
-print(dsPre)
-
-print(minBase)
-print(minPre)
-
-print(maxBase)
-print(maxPre)
+sprintf("El desvio estandar de Base es %2.f",dsBase)
+sprintf("El desvio estandar de Presupuesto es %2.f",dsPre)
+sprintf("El mininmo de base es %2.f",minBase)
+sprintf("El minimo del Presupuesto es %2.f",minPre)
+sprintf("El maáximo de Base es %2.f",maxBase)
+sprintf("El maximo del Presupuesto es %2.f",maxPre)
 
 # =============================================================================
 # VARIABLES CATEGORICAS
