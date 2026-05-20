@@ -42,9 +42,10 @@
 #
 # =============================================================================
 #===========================LIBRERIAS A USAR===================================
-install.packages("tidyverse")
-install.packages("dplyr")
-install.packages("ggplot2")
+
+#install.packages("tidyverse")
+#install.packages("dplyr")
+#install.packages("ggplot2")
 
 library(ggplot2)
 library(dplyr)
@@ -54,126 +55,134 @@ library(tidyverse)
 # DATASETS
 # =============================================================================
 
-base <- read.csv("/home/skuvi/Documentos/Facultad/Lab de Datos Calculo/TP1/base_aprender_secu_2024.csv")
+base <- read.csv("base_aprender_secu_2024.csv")
 
-presupuesto <- read.csv("/home/skuvi/Documentos/Facultad/Lab de Datos Calculo/TP1/presupuesto_educacion_2024.csv")
-
-# =============================================================================
-# VARIABLES NUMERICAS
-# ---------------------------
-# MEDIA
-# ---------------------------
-
-probase <- mean(base[,7], na.rm = TRUE)
-
-# Calcula el promedio de lpuntaje
-# na.rm = TRUE elimina valores NA
-
-propre <- mean(presupuesto[,3], na.rm = TRUE)
-
-# ---------------------------
-# MEDIANA
-# ---------------------------
-
-medianaBase <- median(base[,7], na.rm = TRUE)
-
-medianaPre <- median(presupuesto[,3], na.rm = TRUE)
-
-# ---------------------------
-# DESVIO ESTANDAR
-# ---------------------------
-
-# NO existe ds()
-# La funcion correcta es sd()
-
-dsBase <- sd(base[,7], na.rm = TRUE)
-
-dsPre <- sd(presupuesto[,3], na.rm = TRUE)
-
-# ---------------------------
-# MINIMO
-# ---------------------------
-
-minBase <- min(base[,7], na.rm = TRUE)
-
-minPre <- min(presupuesto[,3], na.rm = TRUE)
-
-# ---------------------------
-# MAXIMO
-# ---------------------------
-
-maxBase <- max(base[,7], na.rm = TRUE)
-
-maxPre <- max(presupuesto[,3], na.rm = TRUE)
+presupuesto <- read.csv("presupuesto_educacion_2024.csv")
 
 # =============================================================================
-# MOSTRAR RESULTADOS
+# 1.A) VARIABLES NUMÉRICAS (Estadísticos Resumen)
 # =============================================================================
 
-print(probase)
-print(propre)
+# --- Base Aprender: Lengua ---
+resumen_lpuntaje <- base %>%
+  summarise(
+    Variable = "lpuntaje (Lengua)",
+    Media   = mean(lpuntaje, na.rm = TRUE),
+    Mediana = median(lpuntaje, na.rm = TRUE),
+    Desvio  = sd(lpuntaje, na.rm = TRUE),
+    Minimo  = min(lpuntaje, na.rm = TRUE),
+    Maximo  = max(lpuntaje, na.rm = TRUE)
+  )
+print(resumen_lpuntaje)
 
-print(medianaBase)
-print(medianaPre)
+# --- Base Aprender: Matemática ---
+resumen_mpuntaje <- base %>%
+  summarise(
+    Variable = "mpuntaje (Matemática)",
+    Media   = mean(mpuntaje, na.rm = TRUE),
+    Mediana = median(mpuntaje, na.rm = TRUE),
+    Desvio  = sd(mpuntaje, na.rm = TRUE),
+    Minimo  = min(mpuntaje, na.rm = TRUE),
+    Maximo  = max(mpuntaje, na.rm = TRUE)
+  )
+print(resumen_mpuntaje)
 
-print(dsBase)
-print(dsPre)
+# --- Base Presupuesto: Gasto Total ---
+resumen_gasto_total <- presupuesto %>%
+  summarise(
+    Variable = "Gasto Total",
+    Media   = mean(Total, na.rm = TRUE),
+    Mediana = median(Total, na.rm = TRUE),
+    Desvio  = sd(Total, na.rm = TRUE),
+    Minimo  = min(Total, na.rm = TRUE),
+    Maximo  = max(Total, na.rm = TRUE)
+  )
+print(resumen_gasto_total)
 
-print(minBase)
-print(minPre)
+# --- Base Presupuesto: Gasto en Personal ---
+resumen_gasto_personal <- presupuesto %>%
+  summarise(
+    Variable = "Gasto en Personal",
+    Media   = mean(Personal, na.rm = TRUE),
+    Mediana = median(Personal, na.rm = TRUE),
+    Desvio  = sd(Personal, na.rm = TRUE),
+    Minimo  = min(Personal, na.rm = TRUE),
+    Maximo  = max(Personal, na.rm = TRUE)
+  )
+print(resumen_gasto_personal)
 
-print(maxBase)
-print(maxPre)
+# --- Base Presupuesto: Bienes y Servicios No Personales ---
+resumen_gasto_bienes <- presupuesto %>%
+  summarise(
+    Variable = "Bienes y Servicios No Personales",
+    Media   = mean(Bienes_y_servicios_no_personales, na.rm = TRUE),
+    Mediana = median(Bienes_y_servicios_no_personales, na.rm = TRUE),
+    Desvio  = sd(Bienes_y_servicios_no_personales, na.rm = TRUE),
+    Minimo  = min(Bienes_y_servicios_no_personales, na.rm = TRUE),
+    Maximo  = max(Bienes_y_servicios_no_personales, na.rm = TRUE)
+  )
+print(resumen_gasto_bienes)
+
+# --- Base Presupuesto: Gasto por Alumno Estatal ---
+resumen_gasto_alumno <- presupuesto %>%
+  summarise(
+    Variable = "Gasto por Alumno Estatal",
+    Media   = mean(Gasto_x_alumno_estatal, na.rm = TRUE),
+    Mediana = median(Gasto_x_alumno_estatal, na.rm = TRUE),
+    Desvio  = sd(Gasto_x_alumno_estatal, na.rm = TRUE),
+    Minimo  = min(Gasto_x_alumno_estatal, na.rm = TRUE),
+    Maximo  = max(Gasto_x_alumno_estatal, na.rm = TRUE)
+  )
+print(resumen_gasto_alumno)
+
 
 # =============================================================================
-# VARIABLES CATEGORICAS
-# =============================================================================
-#
-# Vamos a usar:
-#   table()        -> frecuencia absoluta
-#   prop.table()   -> frecuencia relativa
-#
+# 1.B) VARIABLES CATEGÓRICAS (Frecuencias Absolutas y Relativas)
 # =============================================================================
 
-# ---------------------------
-# SECTOR
-# ---------------------------
+# --- Variable: Sector ---
+tabla_sector <- base %>%
+  count(sector, name = "Frec_Absoluta") %>%
+  mutate(Frec_Relativa_Porc = (Frec_Absoluta / sum(Frec_Absoluta)) * 100)
+print("Tabla de Frecuencias: Sector")
+print(tabla_sector)
 
-freqSector <- table(base$sector)
+# --- Variable: Ámbito ---
+tabla_ambito <- base %>%
+  count(ambito, name = "Frec_Absoluta") %>%
+  mutate(Frec_Relativa_Porc = (Frec_Absoluta / sum(Frec_Absoluta)) * 100)
+print("Tabla de Frecuencias: Ámbito")
+print(tabla_ambito)
 
-# Cuenta cuantos hay de cada categoria
+# --- Variable: Jurisdicción ---
+tabla_jurisdiccion <- base %>%
+  count(jurisdiccion, name = "Frec_Absoluta") %>%
+  mutate(Frec_Relativa_Porc = (Frec_Absoluta / sum(Frec_Absoluta)) * 100)
+print("Tabla de Frecuencias: Jurisdicción")
+print(tabla_jurisdiccion)
 
-print(freqSector)
+# --- Variable: Desempeño Lengua ---
+tabla_ldesemp <- base %>%
+  count(ldesemp, name = "Frec_Absoluta") %>%
+  mutate(Frec_Relativa_Porc = (Frec_Absoluta / sum(Frec_Absoluta)) * 100)
+print("Tabla de Frecuencias: Desempeño Lengua")
+print(tabla_ldesemp)
 
-freqRelSector <- prop.table(freqSector)
+# --- Variable: Desempeño Matemática ---
+tabla_mdesemp <- base %>%
+  count(mdesemp, name = "Frec_Absoluta") %>%
+  mutate(Frec_Relativa_Porc = (Frec_Absoluta / sum(Frec_Absoluta)) * 100)
+print("Tabla de Frecuencias: Desempeño Matemática")
+print(tabla_mdesemp)
 
-# Convierte las frecuencias a porcentajes/proporciones
+# --- Variable: Nivel Educativo de la Madre ---
+tabla_madre <- base %>%
+  count(Nivel_Ed_MadreX, name = "Frec_Absoluta") %>%
+  mutate(Frec_Relativa_Porc = (Frec_Absoluta / sum(Frec_Absoluta)) * 100)
+print("Tabla de Frecuencias: Nivel Educativo Madre")
+print(tabla_madre)
 
-print(freqRelSector)
 
-# ---------------------------
-# AMBITO
-# ---------------------------
-
-freqAmbito <- table(base$ambito)
-
-print(freqAmbito)
-
-freqRelAmbito <- prop.table(freqAmbito)
-
-print(freqRelAmbito)
-
-# ---------------------------
-# JURISDICCION
-# ---------------------------
-
-freqJur <- table(base$jurisdiccion)
-
-print(freqJur)
-
-freqRelJur <- prop.table(freqJur)
-
-print(freqRelJur)
 # ==============base# =============================================================================
 # CONSIGNA 2 - COBERTURA Y ESTRUCTURA DEL OPERATIVO
 # =============================================================================
