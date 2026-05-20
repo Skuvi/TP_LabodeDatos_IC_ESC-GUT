@@ -216,7 +216,7 @@ estructura_por_escuela <- base %>%
 # 3. Calcular y reportar: media, mediana, desvío estándar y rango
 # -----------------------------------------------------------------------------
 
-# --- Métricas para las Secciones por Escuela ---
+# Métricas para las Secciones por Escuela
 resumen_secciones <- estructura_por_school <- estructura_por_escuela %>%
   summarise(
     Indicador = "Secciones por escuela",
@@ -230,7 +230,7 @@ resumen_secciones <- estructura_por_school <- estructura_por_escuela %>%
 print("Tabla Resumen: Secciones por Escuela")
 print(resumen_secciones)
 
-# --- Métricas para los Alumnos por Escuela ---
+# Métricas para los Alumnos por Escuela
 resumen_alumnos <- estructura_por_escuela %>%
   summarise(
     Indicador = "Alumnos por escuela",
@@ -271,49 +271,6 @@ alumnos_fuera   <- total_alumnos_antes - n_distinct(df_filtrado$ID_alumno)
 print("RESULTADO DEL FILTRADO (EXCLUSIÓN)")
 cat("Cantidad de ESCUELAS que quedan fuera:", escuelas_fuera, "\n")
 cat("Cantidad de ESTUDIANTES que quedan fuera:", alumnos_fuera, "\n")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
