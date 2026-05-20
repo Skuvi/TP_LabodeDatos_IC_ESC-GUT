@@ -63,7 +63,7 @@ presupuesto <- read.csv("presupuesto_educacion_2024.csv")
 # 1.A) VARIABLES NUMÉRICAS (Estadísticos Resumen)
 # =============================================================================
 
-# --- Base Aprender: Lengua ---
+# Base Aprender: Lengua
 resumen_lpuntaje <- base %>%
   summarise(
     Variable = "lpuntaje (Lengua)",
@@ -75,7 +75,7 @@ resumen_lpuntaje <- base %>%
   )
 print(resumen_lpuntaje)
 
-# --- Base Aprender: Matemática ---
+# Base Aprender: Matemática
 resumen_mpuntaje <- base %>%
   summarise(
     Variable = "mpuntaje (Matemática)",
@@ -87,7 +87,7 @@ resumen_mpuntaje <- base %>%
   )
 print(resumen_mpuntaje)
 
-# --- Base Presupuesto: Gasto Total ---
+# Base Presupuesto: Gasto Total
 resumen_gasto_total <- presupuesto %>%
   summarise(
     Variable = "Gasto Total",
@@ -99,7 +99,7 @@ resumen_gasto_total <- presupuesto %>%
   )
 print(resumen_gasto_total)
 
-# --- Base Presupuesto: Gasto en Personal ---
+# Base Presupuesto: Gasto en Personal
 resumen_gasto_personal <- presupuesto %>%
   summarise(
     Variable = "Gasto en Personal",
@@ -111,7 +111,7 @@ resumen_gasto_personal <- presupuesto %>%
   )
 print(resumen_gasto_personal)
 
-# --- Base Presupuesto: Bienes y Servicios No Personales ---
+# Base Presupuesto: Bienes y Servicios No Personales
 resumen_gasto_bienes <- presupuesto %>%
   summarise(
     Variable = "Bienes y Servicios No Personales",
@@ -123,7 +123,7 @@ resumen_gasto_bienes <- presupuesto %>%
   )
 print(resumen_gasto_bienes)
 
-# --- Base Presupuesto: Gasto por Alumno Estatal ---
+# Base Presupuesto: Gasto por Alumno Estatal
 resumen_gasto_alumno <- presupuesto %>%
   summarise(
     Variable = "Gasto por Alumno Estatal",
@@ -140,42 +140,42 @@ print(resumen_gasto_alumno)
 # 1.B) VARIABLES CATEGÓRICAS (Frecuencias Absolutas y Relativas)
 # =============================================================================
 
-# --- Variable: Sector ---
+# Variable: Sector
 tabla_sector <- base %>%
   count(sector, name = "Frec_Absoluta") %>%
   mutate(Frec_Relativa_Porc = (Frec_Absoluta / sum(Frec_Absoluta)) * 100)
 print("Tabla de Frecuencias: Sector")
 print(tabla_sector)
 
-# --- Variable: Ámbito ---
+# Variable: Ámbito
 tabla_ambito <- base %>%
   count(ambito, name = "Frec_Absoluta") %>%
   mutate(Frec_Relativa_Porc = (Frec_Absoluta / sum(Frec_Absoluta)) * 100)
 print("Tabla de Frecuencias: Ámbito")
 print(tabla_ambito)
 
-# --- Variable: Jurisdicción ---
+# Variable: Jurisdicción
 tabla_jurisdiccion <- base %>%
   count(jurisdiccion, name = "Frec_Absoluta") %>%
   mutate(Frec_Relativa_Porc = (Frec_Absoluta / sum(Frec_Absoluta)) * 100)
 print("Tabla de Frecuencias: Jurisdicción")
 print(tabla_jurisdiccion)
 
-# --- Variable: Desempeño Lengua ---
+# Variable: Desempeño Lengua
 tabla_ldesemp <- base %>%
   count(ldesemp, name = "Frec_Absoluta") %>%
   mutate(Frec_Relativa_Porc = (Frec_Absoluta / sum(Frec_Absoluta)) * 100)
 print("Tabla de Frecuencias: Desempeño Lengua")
 print(tabla_ldesemp)
 
-# --- Variable: Desempeño Matemática ---
+# Variable: Desempeño Matemática
 tabla_mdesemp <- base %>%
   count(mdesemp, name = "Frec_Absoluta") %>%
   mutate(Frec_Relativa_Porc = (Frec_Absoluta / sum(Frec_Absoluta)) * 100)
 print("Tabla de Frecuencias: Desempeño Matemática")
 print(tabla_mdesemp)
 
-# --- Variable: Nivel Educativo de la Madre ---
+# Variable: Nivel Educativo de la Madre
 tabla_madre <- base %>%
   count(Nivel_Ed_MadreX, name = "Frec_Absoluta") %>%
   mutate(Frec_Relativa_Porc = (Frec_Absoluta / sum(Frec_Absoluta)) * 100)
@@ -183,24 +183,137 @@ print("Tabla de Frecuencias: Nivel Educativo Madre")
 print(tabla_madre)
 
 
-# ==============base# =============================================================================
-# CONSIGNA 2 - COBERTURA Y ESTRUCTURA DEL OPERATIVO
+
 # =============================================================================
-#
-# A partir de la base Aprender, responder:
-#   - ¿En cuántas escuelas se realizó la evaluación?
-#   - ¿Cuántas secciones participaron por escuela?
-#   - ¿Cuántos alumnos participaron por escuela?
-#
-# Reportar media, mediana, desvío estándar y rango.
-#
-# FILTRO IMPORTANTE:
-# A partir de este punto se trabaja SOLO con escuelas que tengan al menos
-# 10 estudiantes evaluados.
-#   -> ¿Cuántas escuelas quedan fuera del análisis?
-#   -> ¿Cuántos estudiantes quedan fuera del análisis?
-#
+# CONSIGNA 2 - COBERTURA Y ESTRUCTURA DEL OPERATIVO (PARTE 1)
 # =============================================================================
+
+# -----------------------------------------------------------------------------
+# 1. ¿En cuántas escuelas se realizó la evaluación?
+# -----------------------------------------------------------------------------
+
+# Contamos cuántos IDs de colegio únicos existen en la base antes de filtrar
+
+total_escuelas_antes <- n_distinct(base$ID_colegio)
+
+cat("La evaluación se realizó en un total de:", total_escuelas_antes, "escuelas.\n\n")
+
+
+# -----------------------------------------------------------------------------
+# 2. Estructura interna: Secciones y Alumnos por escuela
+# -----------------------------------------------------------------------------
+# Primero agrupamos por escuela para saber la cantidad exacta que tiene cada una
+estructura_por_escuela <- base %>%
+  group_by(ID_colegio) %>%
+  summarise( # Para cada colegio, cuenta cuántas secciones distintas (ID_seccion) 
+             # y cuántos alumnos únicos (ID_alumno) registra.
+    cant_secciones = n_distinct(ID_seccion),
+    cant_alumnos   = n_distinct(ID_alumno)
+  )
+
+
+# -----------------------------------------------------------------------------
+# 3. Calcular y reportar: media, mediana, desvío estándar y rango
+# -----------------------------------------------------------------------------
+
+# --- Métricas para las Secciones por Escuela ---
+resumen_secciones <- estructura_por_school <- estructura_por_escuela %>%
+  summarise(
+    Indicador = "Secciones por escuela",
+    Media   = mean(cant_secciones),
+    Mediana = median(cant_secciones),
+    Desvio_Estandar = sd(cant_secciones),
+    Minimo  = min(cant_secciones),
+    Maximo  = max(cant_secciones)
+  )
+
+print("Tabla Resumen: Secciones por Escuela")
+print(resumen_secciones)
+
+# --- Métricas para los Alumnos por Escuela ---
+resumen_alumnos <- estructura_por_escuela %>%
+  summarise(
+    Indicador = "Alumnos por escuela",
+    Media   = mean(cant_alumnos),
+    Mediana = median(cant_alumnos),
+    Desvio_Estandar = sd(cant_alumnos),
+    Minimo  = min(cant_alumnos),
+    Maximo  = max(cant_alumnos)
+  )
+
+print("Tabla Resumen: Alumnos por Escuela")
+print(resumen_alumnos)
+
+
+# =============================================================================
+# CONSIGNA 2 - COBERTURA Y ESTRUCTURA DEL OPERATIVO (PARTE 2: FILTRADO)
+# =============================================================================
+
+# Guardamos el total de alumnos iniciales en la base antes de filtrar
+total_alumnos_antes <- n_distinct(base$ID_alumno)
+
+# Identificamos cuáles son los IDs de las escuelas que cumplen el requisito (>= 10 alumnos)
+# Usamos la tabla 'estructura_por_escuela' que creamos en el paso anterior
+escuelas_validas <- estructura_por_escuela %>%
+  filter(cant_alumnos >= 10) %>%
+  pull(ID_colegio)
+
+# Creamos el nuevo dataframe filtrado
+# Este dataframe es el que usaremos para el resto del TP
+df_filtrado <- base %>%
+  filter(ID_colegio %in% escuelas_validas)
+
+# Calculamos cuántos elementos quedaron excluidos del análisis
+escuelas_fuera <- total_escuelas_antes - n_distinct(df_filtrado$ID_colegio)
+alumnos_fuera   <- total_alumnos_antes - n_distinct(df_filtrado$ID_alumno)
+
+# Reportamos los resultados por consola
+print("RESULTADO DEL FILTRADO (EXCLUSIÓN)")
+cat("Cantidad de ESCUELAS que quedan fuera:", escuelas_fuera, "\n")
+cat("Cantidad de ESTUDIANTES que quedan fuera:", alumnos_fuera, "\n")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
