@@ -50,6 +50,7 @@
 
 library(ggplot2)
 library(dplyr)
+library(tidyverse)
 
 # =============================================================================
 # DATASETS
@@ -217,7 +218,7 @@ estructura_por_escuela <- base %>%
 # -----------------------------------------------------------------------------
 
 # Métricas para las Secciones por Escuela
-resumen_secciones <- estructura_por_school <- estructura_por_escuela %>%
+resumen_secciones <- estructura_por_escuela %>%
   summarise(
     Indicador = "Secciones por escuela",
     Media   = mean(cant_secciones),
@@ -275,31 +276,167 @@ cat("Cantidad de ESTUDIANTES que quedan fuera:", alumnos_fuera, "\n")
 
 
 # =============================================================================
-# CONSIGNA 3 - DISTRIBUCIÓN DEL DESEMPEÑO INDIVIDUAL
+# CONSIGNA 3 - DISTRIBUCIÓN DEL DESEMPEÑO INDIVIDUAL (ANÁLISIS GRÁFICO)
 # =============================================================================
-#
-# Análisis gráfico de:
-#   - Distribución del puntaje en Lengua.
-#   - Distribución del puntaje en Matemática.
-#   - Distribución de los niveles de desempeño en ambas áreas.
-#
-# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 3.1) Distribución del puntaje en Lengua (Histograma)
+# -----------------------------------------------------------------------------
+grafico_hist_lengua <- ggplot(df_filtrado, aes(x = lpuntaje)) +
+  geom_histogram(fill = "skyblue", color = "white", bins = 30) +
+  labs(
+    title = "Distribución de los Puntajes en Lengua",
+    subtitle = "Operativo Aprender 2024 (Escuelas con >= 10 alumnos)",
+    x = "Puntaje obtenido",
+    y = "Cantidad de estudiantes"
+  ) +
+  theme_minimal()
+
+print(grafico_hist_lengua)
+
+
+# -----------------------------------------------------------------------------
+# 3.2) Distribución del puntaje en Matemática (Histograma)
+# -----------------------------------------------------------------------------
+grafico_hist_mate <- ggplot(df_filtrado, aes(x = mpuntaje)) +
+  geom_histogram(fill = "salmon", color = "white", bins = 30) +
+  labs(
+    title = "Distribución de los Puntajes en Matemática",
+    subtitle = "Operativo Aprender 2024 (Escuelas con >= 10 alumnos)",
+    x = "Puntaje obtenido",
+    y = "Cantidad de estudiantes"
+  ) +
+  theme_minimal()
+
+print(grafico_hist_mate)
+
+
+# -----------------------------------------------------------------------------
+# 3.3) Distribución de los niveles de desempeño en ambas áreas (Gráfico de Barras)
+# -----------------------------------------------------------------------------
+# Como queremos comparar ambas áreas en un mismo gráfico, nos conviene 
+# reestructurar los niveles a formato largo para facilitar el diseño.
+
+df_niveles_largo <- df_filtrado %>%
+  select(ID_alumno, ldesemp, mdesemp) %>%
+  pivot_longer(cols = c(ldesemp, mdesemp), names_to = "Area", values_to = "Nivel") %>%
+  # Limpiamos posibles valores NA para que el gráfico quede prolijo
+  drop_na(Nivel) %>%
+  mutate(Area = if_else(Area == "ldesemp", "Lengua", "Matemática"))
+
+grafico_barras_desempenio <- ggplot(df_niveles_largo, aes(x = Nivel, fill = Area)) +
+  geom_bar(position = "dodge") + # 'dodge' coloca las barras de cada área una al lado de la otra
+  labs(
+    title = "Comparación de Niveles de Desempeño",
+    subtitle = "Distribución individual por área evaluada",
+    x = "Nivel de desempeño categorizado",
+    y = "Cantidad de estudiantes",
+    fill = "Área"
+  ) +
+  # Mantenemos coherencia de colores con los histogramas previos
+  scale_fill_manual(values = c("Lengua" = "skyblue", "Matemática" = "salmon")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) # Rota las etiquetas
+
+print(grafico_barras_desempenio)
 
 
 
 # =============================================================================
 # CONSIGNA 4 - RENDIMIENTO POR ESCUELA SEGÚN CARACTERÍSTICAS INSTITUCIONALES
 # =============================================================================
-#
-# Calcular indicadores agregados a nivel escuela (ej: promedio de puntaje
-# en Lengua y/o Matemática) y analizar el rendimiento según:
-#   a) Jurisdicción
-#   b) Sector de gestión (estatal / privado)
-#   c) Ámbito (urbano / rural)
-#
-# Incluir tablas resumen y gráficos comparativos.
-#
-# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 4.0) Agregación de datos a nivel Escuela
+# -----------------------------------------------------------------------------
+# Transformamos la base de alumnos a una base donde cada fila es una escuela única
+df_escuelas <- df_filtrado %>%
+  group_by(ID_colegio) %>%
+  summarise(
+    lpuntaje_prom = mean(lpuntaje, na.rm = TRUE),
+    mpuntaje_prom = mean(mpuntaje, na.rm = TRUE),
+    # Usamos first para conservar las características de la escuela, 
+    # ya que todos los alumnos de una misma escuela comparten la misma provincia, sector y ámbito
+    jurisdiccion  = first(jurisdiccion),
+    sector        = first(sector),
+    ambito        = first(ambito)
+  )
+
+# -----------------------------------------------------------------------------
+# 4.a) Análisis según JURISDICCIÓN (Provincias)
+# -----------------------------------------------------------------------------
+# Tabla Resumen por Provincia
+tabla_rend_jurisdiccion <- df_escuelas %>%
+  group_by(jurisdiccion) %>%
+  summarise(
+    Cant_Escuelas = n(),
+    Promedio_Lengua = mean(lpuntaje_prom, na.rm = TRUE),
+    Promedio_Mate   = mean(mpuntaje_prom, na.rm = TRUE)
+  ) %>%
+  arrange(desc(Promedio_Mate)) # Las ordenamos de mayor a menor rendimiento en Matemática
+
+print("Rendimiento Promedio de Escuelas por Jurisdicción")
+print(tabla_rend_jurisdiccion)
+
+# Gráfico Comparativo por Jurisdicción (Boxplot de Matemática)
+grafico_box_jurisdiccion <- ggplot(df_escuelas, aes(x = reorder(jurisdiccion, mpuntaje_prom, FUN = median), y = mpuntaje_prom)) +
+  geom_boxplot(fill = "lightgreen", alpha = 0.7) +
+  coord_flip() + # Rotamos el gráfico de costado para poder leer los nombres de las provincias
+  labs(
+    title = "Rendimiento en Matemática de las Escuelas por Jurisdicción",
+    subtitle = "Ordenado por la mediana de cada provincia",
+    x = "Jurisdicción (Provincia)",
+    y = "Puntaje Promedio de la Escuela"
+  ) +
+  theme_minimal()
+
+print(grafico_box_jurisdiccion)
+
+
+# -----------------------------------------------------------------------------
+# 4.b) Análisis según SECTOR DE GESTIÓN (Estatal / Privado)
+# -----------------------------------------------------------------------------
+# Tabla Resumen por Sector
+tabla_rend_sector <- df_escuelas %>%
+  group_by(sector) %>%
+  summarise(
+    Cant_Escuelas = n(),
+    Promedio_Lengua = mean(lpuntaje_prom, na.rm = TRUE),
+    Promedio_Mate   = mean(mpuntaje_prom, na.rm = TRUE)
+  )
+
+print("Rendimiento Promedio de Escuelas por Sector")
+print(tabla_rend_sector)
+
+
+# -----------------------------------------------------------------------------
+# 4.c) Análisis según ÁMBITO (Urbano / Rural) y Cruce con Sector
+# -----------------------------------------------------------------------------
+# Tabla Resumen por Ámbito
+tabla_rend_ambito <- df_escuelas %>%
+  group_by(ambito) %>%
+  summarise(
+    Cant_Escuelas = n(),
+    Promedio_Lengua = mean(lpuntaje_prom, na.rm = TRUE),
+    Promedio_Mate   = mean(mpuntaje_prom, na.rm = TRUE)
+  )
+
+print("Rendimiento Promedio de Escuelas por Ámbito")
+print(tabla_rend_ambito)
+
+# Gráfico Comparativo Combinado: Sector vs Ámbito
+grafico_box_institucional <- ggplot(df_escuelas, aes(x = sector, y = mpuntaje_prom, fill = ambito)) +
+  geom_boxplot(alpha = 0.8) +
+  labs(
+    title = "Rendimiento Escolar en Matemática según Sector y Ámbito",
+    subtitle = "Comparativa cruzada del promedio institucional",
+    x = "Sector de Gestión",
+    y = "Puntaje Promedio de la Escuela",
+    fill = "Ámbito"
+  ) +
+  theme_minimal()
+
+print(grafico_box_institucional)
 
 
 
