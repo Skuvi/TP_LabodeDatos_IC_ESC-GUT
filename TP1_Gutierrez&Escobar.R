@@ -441,33 +441,113 @@ print(grafico_box_institucional)
 
 
 # =============================================================================
-# CONSIGNA 5 - RELACIÓN ENTRE DESEMPEÑO Y GASTO EDUCATIVO (SECTOR ESTATAL)
+# CONSIGNA 5 - VINCULACIÓN ENTRE GASTO EDUCATIVO Y RENDIMIENTO ESCOLAR
 # =============================================================================
-#
-# SOLO escuelas de gestión estatal.
-# Analizar la posible asociación entre:
-#   - Puntaje promedio (Lengua y/o Matemática)
-#   - Variables de gasto educativo
-# Agrupando por jurisdicción.
-#
-# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 5.1) Filtrado y Agregación de Rendimiento Estatal por Jurisdicción
+# -----------------------------------------------------------------------------
+# Nos quedamos solo con escuelas estatales y promediamos su rendimiento por provincia
+rendimiento_estatal_jurisdiccion <- df_escuelas %>%
+  filter(sector == "Estatal") %>%
+  group_by(jurisdiccion) %>%
+  summarise(
+    prom_mate_estatal = mean(mpuntaje_prom, na.rm = TRUE),
+    prom_lengua_estatal = mean(lpuntaje_prom, na.rm = TRUE)
+  )
+
+# -----------------------------------------------------------------------------
+# 5.2) Unión de Bases
+# -----------------------------------------------------------------------------
+# Vinculamos los datos de rendimiento con la base de presupuesto usando la provincia como llave
+df_vinculado <- rendimiento_estatal_jurisdiccion %>%
+  inner_join(presupuesto, by = "jurisdiccion")
+
+
+# -----------------------------------------------------------------------------
+# 5.3) Gráfico de Dispersión (Scatterplot) con Línea de Tendencia Descriptiva
+# -----------------------------------------------------------------------------
+grafico_dispersion <- ggplot(df_vinculado, aes(x = Gasto_x_alumno_estatal, y = prom_mate_estatal)) +
+  # Dibujamos la nube de puntos (cada punto es una provincia)
+  geom_point(color = "darkgreen", size = 3, alpha = 0.8) +
+  # Agregamos una línea de tendencia suave para ver la dirección de los datos
+  geom_smooth(method = "lm", color = "red", se = FALSE, linetype = "dashed") + 
+  # Le ponemos el nombre de la provincia a cada punto para poder identificarlas
+  geom_text(aes(label = jurisdiccion), vjust = -1, size = 3, check_overlap = TRUE) + 
+  labs(
+    title = "Relación entre Gasto por Alumno Estatal y Rendimiento en Matemática",
+    subtitle = "Análisis a nivel jurisdiccional (Solo escuelas de sector Estatal)",
+    x = "Gasto por Alumno Estatal ($)",
+    y = "Puntaje Promedio de la Jurisdicción (Matemática)"
+  ) +
+  theme_minimal()
+
+print(grafico_dispersion)
 
 
 
 # =============================================================================
-# CONSIGNA 6 - ANÁLISIS LIBRE
+# CONSIGNA 6 - ANÁLISIS LIBRE: DETECCIÓN DE ESCUELAS OUTLIERS EN PBA
 # =============================================================================
-#
-# Elegir UN objetivo adicional no incluido antes. Opciones sugeridas:
-#   - Desigualdad de desempeño según nivel educativo de la madre.
-#   - Brechas urbano-rural dentro de una jurisdicción.
-#   - Diferencia estatal vs. privada controlando por ámbito.
-#   - Dispersión entre escuelas dentro de una misma jurisdicción.
-#   - Detección de escuelas outliers (alto / bajo rendimiento).
-#
-# Mostrar metodología y principales hallazgos.
-#
-# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 6.1) Filtrado de datos para la Jurisdicción bajo estudio
+# -----------------------------------------------------------------------------
+# Nos quedamos únicamente con las escuelas de la Provincia de Buenos Aires
+df_pba <- df_escuelas %>%
+  filter(jurisdiccion == "Buenos Aires")
+
+# -----------------------------------------------------------------------------
+# 6.2) Metodología Estadística para Detectar Outliers
+# -----------------------------------------------------------------------------
+# Calculamos los cuartiles y el Interquartile Range (IQR) para Matemática en PBA
+q1_pba  <- quantile(df_pba$mpuntaje_prom, 0.25, na.rm = TRUE)
+q3_pba  <- quantile(df_pba$mpuntaje_prom, 0.75, na.rm = TRUE)
+iqr_pba <- q3_pba - q1_pba
+
+# Definimos los límites matemáticos para considerar a una escuela como "atípica"
+limite_inferior <- q1_pba - 1.5 * iqr_pba
+limite_superior <- q3_pba + 1.5 * iqr_pba
+
+# -----------------------------------------------------------------------------
+# 6.3) Identificación de las Escuelas Outliers
+# -----------------------------------------------------------------------------
+# Escuelas con rendimiento excepcionalmente ALTO
+outliers_altos <- df_pba %>%
+  filter(mpuntaje_prom > limite_superior) %>%
+  select(ID_colegio, mpuntaje_prom, sector, ambito) %>%
+  arrange(desc(mpuntaje_prom))
+
+# Escuelas con rendimiento excepcionalmente BAJO
+outliers_bajos <- df_pba %>%
+  filter(mpuntaje_prom < limite_inferior) %>%
+  select(ID_colegio, mpuntaje_prom, sector, ambito) %>%
+  arrange(mpuntaje_prom)
+
+print("Escuelas Outliers de ALTO Rendimiento en PBA")
+print(head(outliers_altos, 10))
+
+print("Escuelas Outliers de BAJO Rendimiento en PBA")
+print(head(outliers_bajos, 10))
+
+# -----------------------------------------------------------------------------
+# 6.4) Visualización Gráfica del Análisis de Dispersión
+# -----------------------------------------------------------------------------
+grafico_outliers_pba <- ggplot(df_pba, aes(x = sector, y = mpuntaje_prom, fill = sector)) +
+  geom_boxplot(outlier.color = "red", outlier.size = 2.5, outlier.shape = 16) +
+  # Agregamos los límites teóricos con líneas punteadas para que se entienda el criterio
+  geom_hline(yintercept = limite_superior, linetype = "dashed", color = "darkgreen", size = 0.8) +
+  geom_hline(yintercept = limite_inferior, linetype = "dashed", color = "darkred", size = 0.8) +
+  labs(
+    title = "Detección de Escuelas Outliers en la Provincia de Buenos Aires",
+    subtitle = "Identificación de anomalías de rendimiento en Matemática (Criterio 1.5xIQR)",
+    x = "Sector de Gestión",
+    y = "Puntaje Promedio de la Escuela (Matemática)",
+    fill = "Sector"
+  ) +
+  theme_minimal()
+
+print(grafico_outliers_pba)
 
 
 
