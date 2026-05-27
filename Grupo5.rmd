@@ -1,0 +1,239 @@
+---
+title: "Laboratorio de Datos IC — Grupo 5 —  Laboratorio de Datos · IC · FCEN-UBA"
+subtitle: "TP1 — Aprender Secundaria 2024"
+author: "Gutierrez & Escobar"
+date: "2026-05-22"
+output:
+  pdf_document:
+    latex_engine: xelatex
+    toc: true
+    toc_depth: 2
+    number_sections: true
+    fig_caption: true
+linestretch: 1.5
+geometry: margin=2.5cm 
+mainfont: "TeX Gyre Termes"  #Es Times New Roman, pero en mi sistema operativo se llama así.
+fontsize: 11pt
+lang: es
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,         
+  message = FALSE,        
+  warning = FALSE,        
+  fig.align = "center",
+  fig.width = 7,
+  fig.height = 3.5,
+  out.width = "75%"
+)
+
+#ESta cantidad de librerias xq mi compu no logra instalar el tydeverse por completo, falla con el de readr
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(purrr)
+library(knitr)
+library(kableExtra)
+source("TP1_Grupo5.R")
+```
+
+# Introducción
+
+En este trabajo elaboramos un análisis de datos sobre datasets públicos, proporcionados por la Secretaria de Educación de Argentina, correspondiente a la prueba nacional **Aprender Secundaria 2024**. A través de esta evaluación se midió el desempeño de estudiantes de último año de secundarias de todo el país, en las áreas de Lengua y Matemática, mediante puntajes numéricos y categorizaciones/etiquetado.
+
+En Argentina, los estudiantes vienen mostrando una notoria baja en el nivel de Matemática y Lengua, respecto a años anteriores.Por ello, en este trabajo analizamos el nivel actual de los estudiantes y discutimos posibles factores asociados a esta desempeño. Nos centraremos en respoonder;
+
+***¿Qué factores institucionales y contextuales se asocian al rendimiento educativo de los estudiantes?***
+
+A lo largo del informe describimos las caracteristicas del operativo, analizamos las distribuciones de rendimiento por jurisdicción, gestión y ámbito. Nos enfocamos en sí existe una relación entre el gasto público provincial y los resultados de los estudiantes. Luego, para finalizar discutimos sobre lo abordado.
+
+# Metodología
+
+Los datos provienen del sitio web del [*Gobierno Nacional*](https://www.argentina.gob.ar/educacion/evaluacion-informacion-educativa/aprender/aprender-2024/aprender-secundaria-2024). A continuación una descricipión breve y vista previa de los mismos:
+
+```{r Tabla_Base, echo=FALSE}
+knitr::kable(head(base , 5),
+             booktabs = TRUE,
+             caption = "Muestra de Base de Estudiantes") %>%
+  kable_styling(latex_options = c("striped", "hold_position"),
+                full_width = FALSE,
+                position = "center")
+```
+
+Cada fila corresponde a un alumno evaluado. Contiene puntajes en Lengua y Matemática, identificadores de escuela, jurisdicción, sector (estatal o privado), ámbito(urbano o rural) y nivel educativo de la madre como variable contextual.
+
+```{r Tabla_Presupuesto, echo=FALSE}
+knitr::kable(head(presupuesto , 5),
+             booktabs = TRUE,
+             caption = "Muestra de Base de Presupuesto") %>%
+  kable_styling(latex_options = c("striped", "hold_position"),
+                full_width = FALSE,
+                position = "center")
+```
+
+Gasto educativo por provincia, incluyendo gasto por alumno estatal.
+
+En cuanto los valores nulos o aquellos que no se puden llegar a analizar, tomamos las siguientes decisiones.
+
+```{r Tabla_Nas}
+# na_tabla <- base %>%
+#   summarise(across(everything(), ~sum(is.na(.x)))) %>%
+#   pivot_longer(everything(), names_to= "Variable", values_to= "Cant_NA") %>%
+#   mutate(Prop_NA = round(Cant_NA / nrow(base)*100, 2)) %>%
+#   arrange(desc(Cant_NA))
+
+knitr::kable(na_tabla, 
+             caption = "Cantidad y proporción de valores nulos por variable",
+             col.names = c("Varibale", "Cant. NA" , "Proporción")) %>%
+    kable_styling(latex_options = c("striped", "hold_position"),
+                    full_width = FALSE, position = "center")
+```
+
+Estos valores fueron tomandos en cuento para poder realizar las siguientes variables cuantativas y categoricas, las mismas se trataron de:
+
+Las **variables numéricas** son: puntaje en Lengua (`lpuntaje`),puntaje en Matemática (`mpuntaje`), gasto total provincial (`Total`), gasto en personal (`Personal`), bienes y servicios no personales (`Bienes_y_servicios_no_personales`) y gasto por alumno estatal (`Gasto_x_alumno_estatal`). Para todas ellas se aplicó `na.rm = TRUE` en los cálculos de resumen, dado que presentan valores faltantes según la tabla anterior.
+
+Luego, las **variables categóricas** son: sector de gestión (`sector`) con `r nrow(tabla_sector)` categorías, ámbito (`ambito`) con `r nrow(tabla_ambito)` categorías, jurisdicción (`jurisdiccion`) con `r nrow(tabla_jurisdiccion)` jurisdicciones, nivel de desempeño en Lengua (`ldesemp`), nivel de desempeño en Matemática (`mdesemp`) y nivel educativo de la madre (`Nivel_Ed_MadreX`).
+
+En cuanto a los métodos estadísticos, estos fueron de la siguente forma.En la caracterización descriptiva calculamos la media, mediana, desvío estándar, mínimo y máximo, para las categóricas variables numéricas, y las frecuencias absolutas y relativas. Para comparar el rendimiento entre grupos institucionales utilizamos diagramas de caja (boxplots) a nivel escuela, construidos sobre el promedio de puntaje de cada institución. La vinculación entre el gasto y el rendimiento se midio mediante un gráfico de dispersión con una recta de tendencia por mínimos cuadrados. Finalmente, para la detección de escuelas atípicas en la *Provincia de Buenos Aires* aplicamos el criterio de Tukey: se consideran outliers aquellas instituciones cuyo puntaje promedio se encuentra por debajo de $Q_1 - 1.5 \cdot IQR$ o por encima de $Q_3 + 1.5 \cdot IQR$, donde $IQR = Q_3 - Q_1$.
+
+# Resultados
+
+##Descripción de la base de datos
+
+```{r tabla_num}
+resumen_completo <- bind_rows(
+  resumen_lpuntaje, resumen_mpuntaje,
+  resumen_gasto_total, resumen_gasto_personal,
+  resumen_gasto_bienes, resumen_gasto_alumno
+)
+
+knitr::kable(resumen_completo, booktabs = TRUE, digits = 2,
+             caption = "Estadísticos descriptivos — variables numéricas") %>%
+  kable_styling(latex_options = c("striped","hold_position","scale_down"),
+                full_width = FALSE, position = "center")
+```
+
+Como se puede apreciar;
+
+```{r tabla_sector}
+knitr::kable(tabla_sector, booktabs = TRUE, digits = 2,
+             caption = "Frecuencias — Sector de gestión") %>%
+  kable_styling(latex_options = c("striped","hold_position"),
+                full_width = FALSE, position = "center")
+```
+
+```{r tabla_categoricas}
+knitr::kable(tabla_ambito, booktabs = TRUE, digits = 2,
+             caption = "Frecuencias — Ámbito") %>%
+  kable_styling(latex_options = c("striped","hold_position"),
+                full_width = FALSE, position = "center")
+
+knitr::kable(tabla_ldesemp, booktabs = TRUE, digits = 2,
+             caption = "Frecuencias — Desempeño en Lengua") %>%
+  kable_styling(latex_options = c("striped","hold_position"),
+                full_width = FALSE, position = "center")
+
+knitr::kable(tabla_mdesemp, booktabs = TRUE, digits = 2,
+             caption = "Frecuencias — Desempeño en Matemática") %>%
+  kable_styling(latex_options = c("striped","hold_position"),
+                full_width = FALSE, position = "center")
+```
+
+En cuanto la muestra, la mayoría de alumnos sea el 62.35% pertenece a gestión estatal, mientras que el restante 37.65% a la gestión privada. En cuanto el ambito, encabeza por amplia diferencia las escuelas urbanas con un 92.65%. Frente al desempeño, el nivel predominante en lengua es de 42.75% dentro de la categoria *"Satisfactorio"*, mientras que el de Matemática la categoría principal es *"Por debajo del nivel básico" con un 50.01*%, contratando claramente un situación crítica dentro del área.
+
+## Cobertura y estructura del operativo
+
+La evaluación se realizó en `r total_escuelas_antes` escuelas de todo el país. A continuación se describe la estructura interna del operativo:
+
+```{r tabla_cobertura}
+resumen_estructura <- bind_rows(resumen_secciones, resumen_alumnos)
+knitr::kable(resumen_estructura, booktabs = TRUE, digits = 2,
+             caption = "Estructura del operativo: secciones y alumnos por escuela") %>%
+  kable_styling(latex_options = c("striped","hold_position","scale_down"),
+                full_width = FALSE, position = "center")
+```
+
+Para garantizar la representatividad estadística de cada institución, se excluyeron las escuelas con menos de 10 alumnos evaluados. Esto implicó dejar fuera `r escuelas_fuera` escuelas y `r alumnos_fuera` estudiantes del análisis.
+
+Las escuelas excluidas representan un porcentaje del 19.9% del total. Estas parecen ser mayoritariamente correspondientes a instituciones del ámbito rural y/o de gestion estatal, ya que estas tienden a tener matrículas más reducidas. Por ello, es que los resultados de estos análisis pueden llegar a subestimar las condiciones de las escuelas de este caracter, más pequeñas y alejadas que la mayoría.
+
+## Distribución del desempeño individual
+
+```{r hist_puntajes, fig.cap="Distribución de puntajes en Lengua (izq.) y Matemática (der.)", fig.height=3.0}
+grafico_hist_lengua
+grafico_hist_mate
+```
+
+Las dos distribuciones presentan un forma dentro de todo simétrica, asemejandose a una distribución normal. Los puntajes en Lengua son cercanos a 500, alrededor de 470, mientras que en Matemática la distribución presenta una mayor concentración en valores más bajos, cercanos a 430, claramente correspondientes a la mayoria de alumnos ubicados en al categoria de *"Por debajo del nivel básico"*, como fue observado anteriormente.
+
+```{r barras_desempenio, fig.cap="Niveles de desempeño en Lengua y Matemática"}
+grafico_barras_desempenio
+```
+
+El gráfico muestra lo esperado, una gran diferencia del nivel en las dos áreas. Mientras que en Lengua el nivel "Satisfactorio" es el más frecuente, en Matemática domina ampliamente "Por debajo del nivel básico", esto es una brecha considerable en el desempeño entre las dos disciplinas. En ambas áreas el nivel "Avanzado" es pauperrimo, muy pocos estudiantes alcanzan el nivel más alto por medir y es aún mas grave en Matemática.
+
+## Rendimiento por características institucionales
+
+```{r box_jurisdiccion, fig.cap="Distribución del rendimiento en Matemática por provincia"}
+grafico_box_jurisdiccion
+```
+
+Las tres jurisdicciones con mayor rendimiento en Matemática son CABA, Córdoba y Tierra del Fuego, Antártida e islas del Atlántico Sur, mientras que Chaco, Santiago del Estero y Tucumán presentan los valores más bajos. Para destacar a las jurisdicciones de CABA y Córdoba quienes muestran una gran dispersión interna, indicando una gran hetereogeneidad entre sus escuelas. Sin embargo, jurisdicciones como Catamarca o Jujuy muestran lo contrario cajas compactas, con resultados más homogeneos. Por ultimo, Buenos Aires presenta gran cantidad de outliers "positivos" por amplia diferencia seguido de Tucumán, si bien esto nos dice que hay Secundarias excepcionales también es un gran indicador de la desigualdad economica de la Jurisdicción. En contraste, Misiones y Catamarca muestran outliers "negativos" indicando Secundarias con niveles muy inferiores a lo usual.
+
+En cuanto al sector, las escuelas privadas presentan un promedio de `r round(tabla_rend_sector$Promedio_Mate[tabla_rend_sector$sector=="Privado"], 1)` puntos en Matemática, frente a `r round(tabla_rend_sector$Promedio_Mate[tabla_rend_sector$sector=="Estatal"], 1)` de las estatales. Por ámbito, las escuelas urbanas promedian `r round(tabla_rend_ambito$Promedio_Mate[tabla_rend_ambito$ambito=="Urbano"], 1)` puntos frente a `r round(tabla_rend_ambito$Promedio_Mate[tabla_rend_ambito$ambito=="Rural"], 1)` de las rurales.
+
+```{r box_institucional, fig.cap="Rendimiento según sector y ámbito"}
+grafico_box_institucional
+```
+
+Las escuelas privadas superan a las estales en ambos ámbitos. La brecha es notoria en el ambito Urbano de dentro de las instituciones Privadas , donde la diferencia de medianas es mayor. Cabe recalcar los outliers presentes en las escuelas Urbanas de gestión estatal, se encuentra varias instituciones con gran nivel.
+
+##  Relación entre gasto educativo y rendimiento
+
+```{r scatter_gasto, fig.cap="Gasto por alumno estatal vs rendimiento en Matemática por provincia"}
+grafico_dispersion
+```
+
+La tendencia no parece ser positiva, son varios los casos en los que jurisdicciones superan en nivel a académico a otras a pesar de contar con menor presupuesto. Casos como el de CABA frente a Neuquén son los clarísimos, a pesar de que Neuquén cuenta con casi más del doble de presupuesto que CABA, la diferencia es de una alta magnitud. Patrones así son usuales tales como los casos entre; Catamarca - Córdoba y Santa Cruz - Entre Ríos. Esto sugiere que el gasto en educación por si solo no es totalmente determinante en el nivel de los alumnos.
+
+## Análisis libre: escuelas outliers en la Provincia de Buenos Aires
+
+```{r tabla_outliers_altos}
+knitr::kable(head(outliers_altos, 10), booktabs = TRUE, digits = 2,
+             caption = "Escuelas con rendimiento excepcionalmente alto — PBA") %>%
+  kable_styling(latex_options = c("striped","hold_position"),
+                full_width = FALSE, position = "center")
+```
+
+```{# {r tabla_outliers_bajos}
+# knitr::kable(head(outliers_bajos, 10), booktabs = TRUE, digits = 2,
+#              caption = "Escuelas con rendimiento excepcionalmente bajo — PBA") %>%
+#   kable_styling(latex_options = c("striped","hold_position"),
+#                 full_width = FALSE, position = "center")
+```
+
+```{r box_outliers, fig.cap="Detección de outliers en PBA — criterio Tukey 1.5×IQR"}
+grafico_outliers_pba
+```
+
+En `r nrow(outliers_altos)` se identificaron escuelas con rendimiento excepcionalmente alto en la Provincia de Buenos Aires según el criterio de Tukey pero con este mismo parametro no se detectaron escuelas con redimiento excepcionalmente bajo. Esto indica que, si bien el rendimiento general de PBA es medio, existe un grupo de instituciones que supera considerablemente la distribución esperada, sugiriendo heterogeneidad interna dentro de la provincia, consistente con lo observado en el boxplot jurisdiccional.
+
+# Discusión
+
+Frente a los hallasgos del trabajo logramos comprender que no existe una correspondencia marcada entre el presupuesto educativo y el nivel académico de los estudiantes en las áreas de Matemática y Lengua, como se pudo apreciar en el apartado de *"Relación entre gasto educativo y rendimiento".*
+
+A pesar de ello, si se vio una relación entre el tipo de gestión, donde las instituciones privadas presentan mejor nivel que las estatales. A su vez, el ambito es determinante: las escuelas Urbanas tienen mejor rendimiento que las Rurales. Sin embargo, el análisis es descriptivo y transversal, por lo tanto las observaciones no implican directamente causalidad.
+
+# Conclusiones
+
+En respuesta a la pregunta inicial, los resultados sugieren que el tipo de gestión y el ámbito se asocian al rendimiento educativo, mientras que el gasto por alumno no muestra una relación clara con los resultados. Si bien las instituciones privadas presentan mejor nivel en general, varias escuelas de gestión estatal alcanzan niveles muy altos, lo que indica que el rendimiento óptimo es alcanzable en ambos tipos de organización. Para futuras investigaciones sería valioso incorporar variables socioeconómicas que permitan controlar el contexto familiar de los estudiantes.
+
+# Conclusiones
+
+En respuesta a nuestra pregunta inicial, los resultados sugieren que aumentar el presupuesto no es indicador de un nivel academico alto, como también lo es en el caso de tipo de gestion. Si bien las instituciones privadas cuentan con mejor nivel en general, varias instituciones de gestión estatal cuentan con un nivel altisímo, mostrando así que en ambos tipo de organización el nivel optimo de educuación es plausible. Para un analisis futuro más profundo sería enriquecedor variables socioeconómicas que constrasten el contexto familiar.
+
+# Referencias
+
+- Secretaría de Evaluación e Información Educativa (2024). *Aprender Secundaria 2024*. Ministerio de Educación de la Nación Argentina. Recuperado de <https://www.argentina.gob.ar/educacion/evaluacion-informacion-educativa/aprender/aprender-2024/aprender-secundaria-2024>
